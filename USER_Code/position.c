@@ -1,4 +1,5 @@
 #include "position.h"
+#include "cmsis_os2.h"
 
 /**
  * @brief 数据解析函数  如更换MCU平台或更换软件库，只需将串口接收到的值传入该函数即可解析

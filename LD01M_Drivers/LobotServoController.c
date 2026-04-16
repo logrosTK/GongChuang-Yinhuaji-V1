@@ -4,7 +4,8 @@
 * 日期：20160806
 * LSC系列舵机控制板二次开发示例
 *******************************************************************************/
-#include "stm32f10x.h"
+#include "main.h"
+#include "usart.h"
 #include "LobotServoController.h"
 #include <stdarg.h>
 #include <string.h>

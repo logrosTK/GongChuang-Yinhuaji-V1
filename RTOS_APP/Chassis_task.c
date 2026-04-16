@@ -1,177 +1,308 @@
 /**
   ******************************************************************************
-  * @author  PINK SAKURA
+  * @author  PINK SAKURA / Modified for ZDT 42 stepper CAN
   * @version V1.0
   * @date    2024-08-08
-  * @brief   底盘主任务
+  * @brief   底盘控制 C 文件
   ******************************************************************************
   * @attention
-  * 邮箱：sakura.mail@qq.com
+  * 底盘电机驱动已从 UART4 串口协议改为 ZDT X_V2 CAN 速度控制
+  * 电机地址：左前=0x01，右前=0x02，左后=0x03，右后=0x04
+  * 速度单位：ZDT X_V2 vel 参数单位为 RPM（转/分）
+  * 原始 SpeedTarget 单位换算：除以 0.238 得到整数速度值，
+  * 再换算为 RPM：整数速度值 / SPEED_TO_RPM_RATIO
   ******************************************************************************
   */
 
-#include "Chassis_task.h"
-#include "Tower_task.h"
+#include "chassis_control.h"
+#include "cmsis_os2.h"
+#include "visual_identity.h"
+#include "X_V2.h"
 
-uint8_t chassis_mode=2;    //底盘模式
-uint8_t control_mode=0;    //遥控模式
+/* ZDT电机CAN地址 */
+#define MOTOR_ADDR_LF   0x01    // 左前
+#define MOTOR_ADDR_RF   0x02    // 右前
+#define MOTOR_ADDR_LB   0x03    // 左后
+#define MOTOR_ADDR_RB   0x04    // 右后
 
-int X_target = 0, 
-	  Y_target = 0, 
-    Z_target = 0;
+/* 加速度设置（单位：RPM/s，根据实际调试修改） */
+#define MOTOR_ACC       200
 
-float d_X = 0,
-	    d_Y = 0;
+float rcKpx  = 8,  rcKpy = 8,  rcKpz = 6;
+float mKpx   = 2.3, mKpy = 2.3, mKpz = 9;
+float vKpx   = 1.2, vKpy = 1.2, vKpz = 2.4;
+float cvKpz  = 0.08;
+int   last_Speed[4] = {0};
 
-void Motor_Init(void)    //底盘初始化
+float XYVmax;
+float ZVmax;
+float XYVmin;
+float ZVmin;
+
+uint8_t in_pos     = 1;
+uint8_t v_in_pos   = 1;
+uint8_t near_pos   = 1;
+uint8_t delay_pos  = 0;
+uint8_t delay_turn = 0;
+uint8_t delay_visual = 0;
+
+float devx = 0;
+float devy = 0;
+float devz = 0;
+
+
+void SpeedTarget_stop(void)
 {
-  VM_ON();
-	visual_idle();    //视觉空闲
+    SpeedTarget[0] = 0;
+    SpeedTarget[1] = 0;
+    SpeedTarget[2] = 0;
+    SpeedTarget[3] = 0;
 }
 
-//-------------------------------------------------------------------------------------------------------------------
-//  @brief      		底盘目标位置更新
-//  @return     			/
-//  @param					 x 位置（mm）
-//  @param					 y 位置（mm）		
-//  @param					 z 位置（mm）   
-//  @Sample usage:    /
-//-------------------------------------------------------------------------------------------------------------------
-void Chassis_target_updata(int x, int y, int z)    //底盘目标位置更新
-{
-  X_target = x;
-	Y_target = y;
-	Z_target = z;
-	chassis_mode = 1;    //开启场地位置环
-	in_pos = 0;
-	near_pos = 0;
-	delay_pos = 0;
-}
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      		底盘目标定位
-//  @return     			/
-//  @param					 x 位置（mm）
-//  @param					 y 位置（mm）		
-//  @param					 z 位置（deg）
-//  @param					 precise 二次修正 0:修正（默认） 1:不修正	
-//  @param					 delay 到位延时（ms）
-//  @Sample usage:    /
+//  @brief      ZDT 42步进电机 CAN速度控制
+//              原函数通过 UART4 发送串口协议，现改为调用 X_V2_Vel_Control()
+//              speed > 0: 正转(dir=0)，speed < 0: 反转(dir=1)
+//              速度幅值直接作为 RPM 传入，最大值与 XYVmax 对应
+//              如实际转速不对请调整 SPEED_TO_RPM 比例系数
 //-------------------------------------------------------------------------------------------------------------------
-void Chassis_Go_Pos(int x, int y, int z, uint8_t precise, uint16_t delay)    //底盘目标定位
+void SetMotorVoltageAndDirection(int MotorSpeed1, int MotorSpeed2, int MotorSpeed3, int MotorSpeed4)
 {
-  	Chassis_target_updata(x, y, z);
-	  if (precise==1)
-	    while(near_pos == 0) {osDelay(10);}  //接近
-	  else
-	    while(in_pos == 0) {osDelay(10);}  //就位
-		
-		if (delay!=0)
-		  osDelay(delay);
+    uint8_t addr[4]  = {MOTOR_ADDR_LF, MOTOR_ADDR_RF, MOTOR_ADDR_LB, MOTOR_ADDR_RB};
+    int     speed[4] = {MotorSpeed1, MotorSpeed2, MotorSpeed3, MotorSpeed4};
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        uint8_t dir = 0;
+        int     vel = speed[i];
+
+        if (vel < 0)
+        {
+            dir = 1;
+            vel = -vel;
+        }
+
+        /* X_V2_Vel_Control(addr, dir, acc, vel_rpm, sync_flag)
+         * vel 单位：RPM，根据实际机械结构调试该值
+         * snF=false 表示立即执行，不等待同步指令 */
+        X_V2_Vel_Control(addr[i], dir, MOTOR_ACC, (float)vel, false);
+    }
 }
 
-//-------------------------------------------------------------------------------------------------------------------
-//  @brief      		底盘目标位置逼近值清零（临时，退出后恢复上次绝对位置）
-//  @return     			/
-//  @param					  /
-//  @Sample usage:    /
-//-------------------------------------------------------------------------------------------------------------------
-void Chassis_d_zero(void)    //底盘目标位置逼近值清零
-{
-	d_X = 0;
-	d_Y = 0;
-}
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      		底盘视觉定位
-//  @return     			/
-//  @param					 目标编号 1物料盘 2色环 3码垛时色环
-//  @param					 x 位置（像素）
-//  @param					 y 位置（像素）		
-//  @param					 z 位置（像素差）
-//  @param					 delay 到位延时（ms）
-//  @Sample usage:    /
+//  @brief      速度限幅
 //-------------------------------------------------------------------------------------------------------------------
-void Chassis_Visual_Pos(uint8_t target, int x, int y, int z, uint16_t delay)    //底盘视觉定位
+void numerical_limit(float* value, float max, float min, float dead_zone)
 {
-	chassis_mode = 2;    //解除场地位置环
-	
-//	identify_posture(1500);  //识别姿态
-	
-	LED_2_ON();
-  v_in_pos = 0;
-	delay_visual=0;
-	vsiual_data_inti();    //清除接收数据
-	SpeedTarget_stop();    //电机停转
-	short target_data = 0;
-	
-	while(target_data==0)
-	{
-    switch(target)    //请求获取对应目标位置
-		{
-    case 1:  //物料盘
-			  identify_material_tray();
-		    target_data = VIS_RX.tray_center_x + VIS_RX.tray_center_y;
-        break;
-    case 2:  //色环
-			  identify_color_rings();
-		    target_data = VIS_RX.rgb_circle_x + VIS_RX.rgb_circle_y;
-        break;
-    case 3:  //码垛时色环
-			  stacking_positioning();
-		    target_data = VIS_RX.rgb_circle_x + VIS_RX.rgb_circle_y;
-        break;
-		case 4:  //色环粗校准
-			  identify_color_rings();
-		    target_data = VIS_RX.rgb_circle_x + VIS_RX.rgb_circle_y;
-        break;
-	  }
-		  osDelay(100);
-	}
-	    while(v_in_pos == 0) {visual_pos_adj(target,x,y,z); osDelay(5);}  //就位
-//			while(1) {visual_pos_adj(target,x,y,z); osDelay(5);}  //就位
-			visual_idle();    //空闲
-			LED_2_OFF();
-			SpeedTarget_stop();    //电机停转
-			buzzer_rings(20, 20, 3);
-		
-		if (delay!=0)
-		  osDelay(delay);
+    if (*value > dead_zone)
+        *value += min;
+    else if (*value < -dead_zone)
+        *value -= min;
+    if (*value > max)
+        *value = max;
+    else if (*value < -max)
+        *value = -max;
 }
 
+
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      		底盘主任务
-//  @return     			/
-//  @param					  /
-//  @Sample usage:    /
+//  @brief      底盘遥控函数
 //-------------------------------------------------------------------------------------------------------------------
-void Chassis_task(void)    //底盘任务
+void chassis_RC(short x, short y, short z)
 {
-  Motor_Init();
-	osDelay(100);
-	while(!ready) { osDelay(10);}
-	
-	while(1)
-	{
-		if(control_mode==0)
-		{
-	    switch(chassis_mode)
-	  	{
-		    case 1:
-		  		chassis_move(X_target + d_X, Y_target + d_Y, Z_target);    //底盘定位
-		  	  break;
-	  		case 2:
-				  if (v_in_pos == 1)
-            SpeedTarget_stop();    //电机停转
-					osDelay(5);
-		  		break;
-		  }
-	  }
-		else if(control_mode==1)
-		{
-				chassis_RC(RC_RX.LX,RC_RX.LY,RC_RX.RX);     //底盘遥控
-		}
-		SetMotorVoltageAndDirection(SpeedTarget[0], SpeedTarget[1], SpeedTarget[2], SpeedTarget[3]);
-		osDelay(5);
-	}
+    XYVmax = 800;
+    ZVmax  = 600;
+
+    int   Speed[4] = {0};
+    devx = x;
+    devy = y;
+    devz = z;
+
+    float vx1 = 0, vy1 = 0, vz = 0;
+
+    vx1 = 1 * rcKpx * devx;
+    numerical_limit(&vx1, XYVmax, 0, 5);
+
+    vy1 = 1 * rcKpy * devy;
+    numerical_limit(&vy1, XYVmax, 0, 5);
+
+    vz = rcKpz * devz;
+    numerical_limit(&vz, ZVmax, 0, 5);
+
+    float v_ratio = 1;
+
+    Speed[0] =   (int)(( vy1 + vx1 ) * v_ratio + vz);
+    Speed[1] = - (int)(( vy1 - vx1 ) * v_ratio - vz);
+    Speed[2] =   (int)(( vy1 - vx1 ) * v_ratio + vz);
+    Speed[3] = - (int)(( vy1 + vx1 ) * v_ratio - vz);
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        SpeedTarget[i] = (int)(Speed[i] * 0.238f);
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief      底盘定位系统位置环
+//-------------------------------------------------------------------------------------------------------------------
+void chassis_move(int x, int y, int z)
+{
+    XYVmax = 1600;
+    ZVmax  = 750;
+    XYVmin = 5;
+    ZVmin  = 5;
+
+    int Speed[4] = {0};
+    devx = pos_x - x;
+    devy = pos_y - y;
+    if (z * zangle < 0 && abs(z) + fabs(zangle) > 180)
+        devz = -(360 - abs(z) - fabs(zangle));
+    else
+        devz = z - zangle;
+
+    float vx1 = 0, vy1 = 0, vx2 = 0, vy2 = 0, vz = 0;
+
+    vy1 = cos(zangle * 3.141f / 180) * mKpy * devy;
+    vx2 = sin(zangle * 3.141f / 180) * mKpy * devy;
+    numerical_limit(&vy1, XYVmax, XYVmin, 5);
+    numerical_limit(&vx2, XYVmax, XYVmin, 5);
+
+    vy2 = sin(zangle * 3.141f / 180) * mKpx * devx;
+    vx1 = cos(zangle * 3.141f / 180) * mKpx * devx;
+    numerical_limit(&vy2, XYVmax, XYVmin, 5);
+    numerical_limit(&vx1, XYVmax, XYVmin, 5);
+
+    vz = mKpz * devz;
+    numerical_limit(&vz, ZVmax, 0, 5);
+
+    Speed[0] = - (int)(  vy1 - vy2 +  vx1 + vx2 +  vz);
+    Speed[1] =   (int)(  vy1 - vy2 -  vx1 - vx2 -  vz);
+    Speed[2] = - (int)(  vy1 - vy2 -  vx1 - vx2 +  vz);
+    Speed[3] =   (int)(  vy1 - vy2 +  vx1 + vx2 -  vz);
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        if (Speed[i] > 0 && Speed[i] > last_Speed[i])
+            Speed[i] = last_Speed[i] + 20;
+        if (Speed[i] < 0 && Speed[i] < last_Speed[i])
+            Speed[i] = last_Speed[i] - 20;
+        SpeedTarget[i] = (int)(Speed[i] * 0.238f);
+        last_Speed[i]  = Speed[i];
+    }
+
+    if ((devx < 100 && devx > -100) && (devy < 100 && devy > -100) && (devz < 30 && devz > -30))
+        near_pos = 1;
+    if ((devx < 60 && devx > -60) && (devy < 60 && devy > -60) && (devz < 15 && devz > -15))
+        delay_pos++;
+    else
+        delay_pos = 0;
+
+    if (delay_pos > 10)
+        in_pos = 1;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief      底盘视觉微调函数
+//-------------------------------------------------------------------------------------------------------------------
+void visual_pos_adj(uint8_t target, int x, int y, int z)
+{
+    XYVmax = 80;
+    ZVmax  = 35;
+    XYVmin = 3;
+    ZVmin  = 2;
+
+    int Speed[4] = {0};
+
+    switch (target)
+    {
+        case 1:  // 物料盘
+            devy = VIS_RX.tray_center_x - x;
+            devx = VIS_RX.tray_center_y - y;
+            break;
+        case 2:  // 色环
+            devy = VIS_RX.rgb_circle_x - x;
+            devx = VIS_RX.rgb_circle_y - y;
+            break;
+        case 3:  // 码垛时色环
+            devy = VIS_RX.rgb_circle_x - x;
+            devx = VIS_RX.rgb_circle_y - y;
+            break;
+        case 4:  // 色环粗校准
+            devy = VIS_RX.rgb_circle_x - x;
+            devx = VIS_RX.rgb_circle_y - y;
+            break;
+    }
+
+    if (target >= 2)
+        devz = VIS_RX.rgb_circle_z - z;
+    else
+    {
+        if (z * zangle < 0 && abs(z) + fabs(zangle) > 180)
+            devz = -(360 - abs(z) - fabs(zangle));
+        else
+            devz = z - zangle;
+    }
+
+    float vx1 = 0, vy1 = 0, vx2 = 0, vy2 = 0, vz = 0;
+
+    vy1 = vKpy * devy;
+    numerical_limit(&vy1, XYVmax, XYVmin, 0);
+    numerical_limit(&vx2, XYVmax, XYVmin, 0);
+
+    vx1 = vKpx * devx;
+    numerical_limit(&vy2, XYVmax, XYVmin, 0);
+    numerical_limit(&vx1, XYVmax, XYVmin, 0);
+
+    vz = vKpz * devz;
+    numerical_limit(&vz, ZVmax, 0, 0);
+
+    Speed[0] = - (int)(  vy1 - vy2 +  vx1 + vx2 +  vz);
+    Speed[1] =   (int)(  vy1 - vy2 -  vx1 - vx2 -  vz);
+    Speed[2] = - (int)(  vy1 - vy2 -  vx1 - vx2 +  vz);
+    Speed[3] =   (int)(  vy1 - vy2 +  vx1 + vx2 -  vz);
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        if (Speed[i] > 0 && Speed[i] > last_Speed[i])
+            Speed[i] = last_Speed[i] + 20;
+        if (Speed[i] < 0 && Speed[i] < last_Speed[i])
+            Speed[i] = last_Speed[i] - 20;
+        SpeedTarget[i] = (int)(Speed[i] * 0.238f);
+        last_Speed[i]  = Speed[i];
+    }
+
+    switch (target)
+    {
+        case 1:
+            if ((devx < 4 && devx > -4) && (devy < 4 && devy > -4) && (devz < 2 && devz > -2))
+                delay_visual += 2;
+            else
+                delay_visual = 0;
+            break;
+        case 2:
+            if ((devx < 2 && devx > -2) && (devy < 2 && devy > -2) && (devz < 2 && devz > -2))
+                delay_visual++;
+            else
+                delay_visual = 0;
+            break;
+        case 3:
+            if ((devx < 4 && devx > -4) && (devy < 4 && devy > -4) && (devz < 3 && devz > -3))
+                delay_visual += 2;
+            else
+                delay_visual = 0;
+            break;
+        case 4:
+            if ((devx < 10 && devx > -10) && (devy < 10 && devy > -10) && (devz < 6 && devz > -6))
+                delay_visual += 20;
+            else
+                delay_visual = 0;
+            break;
+    }
+
+    if (delay_visual > 200)
+        v_in_pos = 1;
 }
