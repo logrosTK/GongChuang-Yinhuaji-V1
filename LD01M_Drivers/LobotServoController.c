@@ -10,6 +10,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+/* 舵机串口：USART6 (PG9 RX / PG14 TX, 115200) */
+#define uartWriteBuf(buf, len)  HAL_UART_Transmit(&huart6, (buf), (len), HAL_MAX_DELAY)
+
+bool isUartRxCompleted = false;
+
 #define GET_LOW_BYTE(A) ((uint8_t)(A))
 //宏函数 获得A的低八位
 #define GET_HIGH_BYTE(A) ((uint8_t)((A) >> 8))

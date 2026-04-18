@@ -3,23 +3,26 @@
   * @author  PINK SAKURA
   * @version V1.0
   * @date    2024-08-08
-  * @brief   Ö÷ÈÎÎñ
+  * @brief   ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   ******************************************************************************
   * @attention
-  * ÓÊÏä£ºsakura.mail@qq.com
+  * ï¿½ï¿½ï¿½ä£ºsakura.mail@qq.com
   ******************************************************************************
   */
 
 #include "Main_task.h"
+#include "position.h"
+#include "visual_identity.h"
+#include "cmsis_os2.h"
 
 uint8_t GET_TASK_FLAGE = 0;
 uint8_t GET_TASK_TIME_OUT = 0;
 
 void Main_init(void)
 {
-	// SoftSPI_OLED_Init();           // ÒÑÒÆ³ý£¬ÎÞSoftSPI OLED
-	// SoftSPI_OLED_Clear();          // ÒÑÒÆ³ý
-	// SoftSPI_OLED_DisplayTurn(0);   // ÒÑÒÆ³ý
+	// SoftSPI_OLED_Init();           // ï¿½ï¿½ï¿½Æ³ï¿½ï¿½ï¿½ï¿½ï¿½SoftSPI OLED
+	// SoftSPI_OLED_Clear();          // ï¿½ï¿½ï¿½Æ³ï¿½
+	// SoftSPI_OLED_DisplayTurn(0);   // ï¿½ï¿½ï¿½Æ³ï¿½
 	visual_idle();
 	pos_reset();
 }
@@ -31,10 +34,10 @@ void Get_Task_Code(void)
 	GET_TASK_FLAGE = 1;
 	while(color_task[0] + color_task[5] == 0)
 	{
-		identify_QR_code();    //Ê¶±ð¶þÎ¬Âë
+		identify_QR_code();    //Ê¶ï¿½ï¿½ï¿½Î¬ï¿½ï¿½
 		osDelay(50);
 		GET_TASK_TIME_OUT++;
-		if (GET_TASK_TIME_OUT >= 80)  //³¬Ê±´¦Àí
+		if (GET_TASK_TIME_OUT >= 80)  //ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 		{
 			if (d_X == 0 || d_X == -30)
 			  d_X = 30;
@@ -50,29 +53,29 @@ void Get_Task_Code(void)
 
 void Show_Task_Code(void)
 {
-	// SoftSPI_OLED_Clear();                            // ÒÑÒÆ³ý
+	// SoftSPI_OLED_Clear();                            // ï¿½ï¿½ï¿½Æ³ï¿½
 	// for(uint8_t i=0;i<3;i++)
 	// {
-	//     SoftSPI_OLED_ShowBN(8+i*16,16, color_task[i], 1);  // ÒÑÒÆ³ý
+	//     SoftSPI_OLED_ShowBN(8+i*16,16, color_task[i], 1);  // ï¿½ï¿½ï¿½Æ³ï¿½
 	// }
-	// SoftSPI_OLED_ShowBN(56,16, 0, 1);               // ÒÑÒÆ³ý
+	// SoftSPI_OLED_ShowBN(56,16, 0, 1);               // ï¿½ï¿½ï¿½Æ³ï¿½
 	// for(uint8_t i=3;i<6;i++)
 	// {
-	//     SoftSPI_OLED_ShowBN(24+i*16,16, color_task[i], 1); // ÒÑÒÆ³ý
+	//     SoftSPI_OLED_ShowBN(24+i*16,16, color_task[i], 1); // ï¿½ï¿½ï¿½Æ³ï¿½
 	// }
-	// SoftSPI_OLED_Refresh();                          // ÒÑÒÆ³ý
+	// SoftSPI_OLED_Refresh();                          // ï¿½ï¿½ï¿½Æ³ï¿½
 }
 
 void CRing_Dual_Calibration()
 {
 	Chassis_Visual_Pos(4, 320, 222, 4, 0);
 
-		identify_posture(1500, 1200);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1200);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 		osDelay(100);
 
 		Chassis_Visual_Pos(2, 322, 228, 4, 0);
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 		osDelay(200);
 }
 
@@ -81,32 +84,32 @@ void Main_task(void)
 	osDelay(100);
 	Main_init();
 
-//	while(1)  //µ÷ÊÔ¼Ð×¦
+//	while(1)  //ï¿½ï¿½ï¿½Ô¼ï¿½×¦
 //	{
 //	  while(!(HAL_GPIO_ReadPin(Start_GPIO_Port,Start_Pin))) {osDelay(50);}
-//	  LFD_01M_OP_C;    //¼Ð×¦¸´Î»
+//	  LFD_01M_OP_C;    //ï¿½ï¿½×¦ï¿½ï¿½Î»
 //		osDelay(200);
 //		while(!(HAL_GPIO_ReadPin(Start_GPIO_Port,Start_Pin))) {osDelay(50);}
-//		LFD_01M_CL;    //¼Ð×¦¹Ø±Õ
+//		LFD_01M_CL;    //ï¿½ï¿½×¦ï¿½Ø±ï¿½
 //		osDelay(200);
 //	}
 //	while(1){osDelay(50);};
 
-	// SoftSPI_OLED_ShowString(16,0,(uint8_t *)"SW Ver 2.7.4",16,1);   // ÒÑÒÆ³ý
-	// SoftSPI_OLED_ShowString(8,16,(uint8_t *)"OLED INTI PASS",16,1); // ÒÑÒÆ³ý
-	// SoftSPI_OLED_Refresh();                                          // ÒÑÒÆ³ý
+	// SoftSPI_OLED_ShowString(16,0,(uint8_t *)"SW Ver 2.7.4",16,1);   // ï¿½ï¿½ï¿½Æ³ï¿½
+	// SoftSPI_OLED_ShowString(8,16,(uint8_t *)"OLED INTI PASS",16,1); // ï¿½ï¿½ï¿½Æ³ï¿½
+	// SoftSPI_OLED_Refresh();                                          // ï¿½ï¿½ï¿½Æ³ï¿½
 
 	while(!ready) { osDelay(10);}
 	osDelay(100);
-	// buzzer_rings(100, 0, 1);  // ÒÑÒÆ³ý£¬ÎÞ·äÃùÆ÷
+	// buzzer_rings(100, 0, 1);  // ï¿½ï¿½ï¿½Æ³ï¿½ï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½
 
-	// SoftSPI_OLED_Clear();  // ÒÑÒÆ³ý
+	// SoftSPI_OLED_Clear();  // ï¿½ï¿½ï¿½Æ³ï¿½
 
 	pos_reset();
 
 	while(!(HAL_GPIO_ReadPin(Start_GPIO_Port,Start_Pin))) {osDelay(50);}
 
-	chassis_mode=1;    //µ×ÅÌÄ£Ê½
+	chassis_mode=1;    //ï¿½ï¿½ï¿½ï¿½Ä£Ê½
 
 	#ifdef __PRELIMINARY_ROUND__
 
@@ -116,62 +119,62 @@ void Main_task(void)
 //		color_task[1]=3;
 //		color_task[2]=2;
 
-//		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+//		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 //		osDelay(500);
 //
-//		CRing_Dual_Calibration();  //É«»·Ë«»·Ð£×¼
+//		CRing_Dual_Calibration();  //É«ï¿½ï¿½Ë«ï¿½ï¿½Ð£×¼
 
-//			grab_materials_car(1, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ  £¨µÚÒ»¸öÎªÐòºÅ£©
+//			grab_materials_car(1, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½  ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Îªï¿½ï¿½Å£ï¿½
 //			put_materials_ground(color_task[0],0);
-//			grab_materials_car(2, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+//			grab_materials_car(2, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 //			put_materials_ground(color_task[1],0);
-//			grab_materials_car(3, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+//			grab_materials_car(3, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 //			put_materials_ground(color_task[2],0);
 //			reset_posture();
 //		while(1){osDelay(10);};
 
-		Chassis_Go_Pos(150, 165, -45, 0, 300);  //³ö¿â
+		Chassis_Go_Pos(150, 165, -45, 0, 300);  //ï¿½ï¿½ï¿½ï¿½
 
 		reset_posture();
 
-		Chassis_Go_Pos(730, 130, -90, 0, 10);  //É¨Âë
+		Chassis_Go_Pos(730, 130, -90, 0, 10);  //É¨ï¿½ï¿½
 
 		Get_Task_Code();
 		Show_Task_Code();
 
-		/* µÚÒ»Åú */
+		/* ï¿½ï¿½Ò»ï¿½ï¿½ */
 
-		Chassis_Go_Pos(1450, 110, -90, 0, 100);  //ÎïÁÏÌ¨
+		Chassis_Go_Pos(1450, 110, -90, 0, 100);  //ï¿½ï¿½ï¿½ï¿½Ì¨
 
 			grab_turntable_B(color_task[0],1);
 			grab_turntable_B(color_task[1],2);
 			grab_turntable_B(color_task[2],3);
 
-		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·Ïß
+		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·ï¿½ï¿½
 
-		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //´Ö¼Ó¹¤Çø1
+		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½1
 
-		Chassis_Go_Pos(1050, 1900, 90, 1, 50);  //´Ö¼Ó¹¤Çø2
+		Chassis_Go_Pos(1050, 1900, 90, 1, 50);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½2
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1000, 1950, 90, 0, 300);
 
-		CRing_Dual_Calibration();  //É«»·Ë«»·Ð£×¼
+		CRing_Dual_Calibration();  //É«ï¿½ï¿½Ë«ï¿½ï¿½Ð£×¼
 
-			grab_materials_car(1, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ  £¨µÚÒ»¸öÎªÐòºÅ£©
+			grab_materials_car(1, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½  ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Îªï¿½ï¿½Å£ï¿½
 			put_materials_ground(color_task[0],0);
-			grab_materials_car(2, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(2, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[1],0);
-			grab_materials_car(3, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(3, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[2],0);
 			reset_posture();
 
-			grab_materials_ground(color_task[0],1);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_ground(color_task[0],1);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_car(1);
-			grab_materials_ground(color_task[1],0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_ground(color_task[1],0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_car(2);
-			grab_materials_ground(color_task[2],0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_ground(color_task[2],0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_car(3);
 
 		Chassis_Go_Pos(1000, 1880, 90, 1, 300);
@@ -180,55 +183,55 @@ void Main_task(void)
 
 		Chassis_Go_Pos(1860, 1880, 0, 1, 300);
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1900, 1020, 0, 0, 100);
 
-		CRing_Dual_Calibration();  //É«»·Ë«»·Ð£×¼
+		CRing_Dual_Calibration();  //É«ï¿½ï¿½Ë«ï¿½ï¿½Ð£×¼
 		Update_OPS(1940, 1050, 0);
 
-			grab_materials_car(1, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ  £¨µÚÒ»¸öÎªÐòºÅ£©
+			grab_materials_car(1, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½  ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Îªï¿½ï¿½Å£ï¿½
 			put_materials_ground(color_task[0],0);
-			grab_materials_car(2, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(2, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[1],0);
-			grab_materials_car(3, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(3, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[2],0);
 			reset_posture();
 
 		Chassis_Go_Pos(1900, 165, -90, 1, 300);
 
-		/* µÚ¶þÅú */
+		/* ï¿½Ú¶ï¿½ï¿½ï¿½ */
 
-		Chassis_Go_Pos(1450, 120, -90, 0, 100);  //ÎïÁÏÌ¨
+		Chassis_Go_Pos(1450, 120, -90, 0, 100);  //ï¿½ï¿½ï¿½ï¿½Ì¨
 
 			grab_turntable_B(color_task[3],1);
 			grab_turntable_B(color_task[4],2);
 			grab_turntable_B(color_task[5],3);
 
-		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·Ïß
+		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·ï¿½ï¿½
 
-		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //´Ö¼Ó¹¤Çø1
+		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½1
 
-		Chassis_Go_Pos(1050, 1900, 90, 1, 200);  //´Ö¼Ó¹¤Çø2
+		Chassis_Go_Pos(1050, 1900, 90, 1, 200);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½2
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1000, 1950, 90, 0, 300);
 
-		CRing_Dual_Calibration();  //É«»·Ë«»·Ð£×¼
+		CRing_Dual_Calibration();  //É«ï¿½ï¿½Ë«ï¿½ï¿½Ð£×¼
 
-			grab_materials_car(1, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ  £¨µÚÒ»¸öÎªÐòºÅ£©
+			grab_materials_car(1, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½  ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Îªï¿½ï¿½Å£ï¿½
 			put_materials_ground(color_task[3],0);
-			grab_materials_car(2, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(2, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[4],0);
-			grab_materials_car(3, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(3, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[5],0);
 
-			grab_materials_ground(color_task[3],1);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_ground(color_task[3],1);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_car(1);
-			grab_materials_ground(color_task[4],0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_ground(color_task[4],0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_car(2);
-			grab_materials_ground(color_task[5],0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_ground(color_task[5],0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_car(3);
 
 		Chassis_Go_Pos(1000, 1880, 90, 1, 300);
@@ -237,18 +240,18 @@ void Main_task(void)
 
 		Chassis_Go_Pos(1860, 1880, 0, 1, 300);
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1900, 1040, 0, 0, 100);
 
 		Chassis_Visual_Pos(3, 328, 230, 6, 0);
 		Update_OPS(1950, 1050, 0);
 
-			grab_materials_car(1, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ  £¨µÚÒ»¸öÎªÐòºÅ£©
+			grab_materials_car(1, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½  ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Îªï¿½ï¿½Å£ï¿½
 			put_materials_ground(color_task[3],1);
-			grab_materials_car(2, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(2, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[4],1);
-			grab_materials_car(3, 0);     //µ×ÅÌ×¥È¡ÎïÁÏ
+			grab_materials_car(3, 0);     //ï¿½ï¿½ï¿½ï¿½×¥È¡ï¿½ï¿½ï¿½ï¿½
 			put_materials_ground(color_task[5],1);
 			reset_posture();
 
@@ -270,30 +273,30 @@ void Main_task(void)
 	{
 	  uint8_t block_pos[3] = {0};
 
-		Chassis_Go_Pos(150, 165, -45, 0, 300);  //³ö¿â
+		Chassis_Go_Pos(150, 165, -45, 0, 300);  //ï¿½ï¿½ï¿½ï¿½
 
 		reset_posture();
 
-		Chassis_Go_Pos(730, 135, -90, 0, 10);  //É¨Âë
+		Chassis_Go_Pos(730, 135, -90, 0, 10);  //É¨ï¿½ï¿½
 
 		Get_Task_Code();
 		Show_Task_Code();
 
-		/* µÚÒ»Åú */
+		/* ï¿½ï¿½Ò»ï¿½ï¿½ */
 
-		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·Ïß
+		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·ï¿½ï¿½
 
-		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //´Ö¼Ó¹¤Çø1
+		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½1
 
-		Chassis_Go_Pos(1050, 1900, 90, 1, 200);  //´Ö¼Ó¹¤Çø2
+		Chassis_Go_Pos(1050, 1900, 90, 1, 200);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½2
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1000, 1950, 90, 0, 300);
 
 		Chassis_Visual_Pos(3, 328, 230, 6, 0);
 
-		switch(VIS_RX.block_order)  //ÑÕÉ«¶ÔÓ¦É«¿é
+		switch(VIS_RX.block_order)  //ï¿½ï¿½É«ï¿½ï¿½Ó¦É«ï¿½ï¿½
 		{
 			case 1:  block_pos[0] = 3; block_pos[1] = 2; block_pos[2] = 1; break;
 			case 2:  block_pos[0] = 3; block_pos[1] = 1; block_pos[2] = 2; break;
@@ -316,11 +319,11 @@ void Main_task(void)
 
 		Chassis_Go_Pos(1860, 1880, 0, 1, 300);
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1900, 1040, 0, 0, 100);
 
-		CRing_Dual_Calibration();  //É«»·Ë«»·Ð£×¼
+		CRing_Dual_Calibration();  //É«ï¿½ï¿½Ë«ï¿½ï¿½Ð£×¼
 		Update_OPS(1940, 1050, 0);
 
 			grab_materials_car(1, 0);
@@ -342,7 +345,7 @@ void Main_task(void)
 
 		identify_posture(2100, 2000);
 
-		Chassis_Go_Pos(1450, 120, -90, 0, 100);  //ÎïÁÏÌ¨
+		Chassis_Go_Pos(1450, 120, -90, 0, 100);  //ï¿½ï¿½ï¿½ï¿½Ì¨
 
 		Chassis_Visual_Pos(1, 313, 190, -90, 0);
 
@@ -351,21 +354,21 @@ void Main_task(void)
 		put_block_turntable(3, color_task[2]);
 		reset_posture();
 
-		/* µÚ¶þÅú */
+		/* ï¿½Ú¶ï¿½ï¿½ï¿½ */
 
-		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·Ïß
+		Chassis_Go_Pos(1050, 165, 0, 1, 300);  //T1Â·ï¿½ï¿½
 
-		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //´Ö¼Ó¹¤Çø1
+		Chassis_Go_Pos(1050, 1900, 0, 1, 300);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½1
 
-		Chassis_Go_Pos(1050, 1900, 90, 1, 200);  //´Ö¼Ó¹¤Çø2
+		Chassis_Go_Pos(1050, 1900, 90, 1, 200);  //ï¿½Ö¼Ó¹ï¿½ï¿½ï¿½2
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1000, 1950, 90, 0, 300);
 
 		Chassis_Visual_Pos(3, 328, 230, 6, 0);
 
-		switch(VIS_RX.block_order)  //ÑÕÉ«¶ÔÓ¦É«¿é
+		switch(VIS_RX.block_order)  //ï¿½ï¿½É«ï¿½ï¿½Ó¦É«ï¿½ï¿½
 		{
 			case 1:  block_pos[0] = 3; block_pos[1] = 2; block_pos[2] = 1; break;
 			case 2:  block_pos[0] = 3; block_pos[1] = 1; block_pos[2] = 2; break;
@@ -388,11 +391,11 @@ void Main_task(void)
 
 		Chassis_Go_Pos(1860, 1880, 0, 1, 300);
 
-		identify_posture(1500, 1700);  //Ê¶±ð×ËÌ¬
+		identify_posture(1500, 1700);  //Ê¶ï¿½ï¿½ï¿½ï¿½Ì¬
 
 		Chassis_Go_Pos(1900, 1040, 0, 0, 100);
 
-		CRing_Dual_Calibration();  //É«»·Ë«»·Ð£×¼
+		CRing_Dual_Calibration();  //É«ï¿½ï¿½Ë«ï¿½ï¿½Ð£×¼
 		Update_OPS(1950, 1050, 0);
 
 			grab_materials_car(1, 0);
@@ -414,7 +417,7 @@ void Main_task(void)
 
 		identify_posture(2100, 2000);
 
-		Chassis_Go_Pos(1450, 120, -90, 0, 100);  //ÎïÁÏÌ¨
+		Chassis_Go_Pos(1450, 120, -90, 0, 100);  //ï¿½ï¿½ï¿½ï¿½Ì¨
 
 		Chassis_Visual_Pos(1, 310, 190, -90, 0);
 

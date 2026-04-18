@@ -46,7 +46,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # User application code
     USER_Code/io_devices.c
-    USER_Code/chassis_control.c
+    # USER_Code/chassis_control.c  # 已移至 RTOS_APP/Chassis_task.c（CAN版本）
     USER_Code/delay_us.c
     USER_Code/position.c
     USER_Code/oledfont.c

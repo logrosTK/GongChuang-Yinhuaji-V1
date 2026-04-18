@@ -11,6 +11,11 @@
   */
 
 #include "visual_identity.h"
+#include "usart.h"
+#include "io_devices.h"
+
+struct VISUAL_DATA VIS_RX;
+uint8_t color_task[6] = {0};
 
 //-------------------------------------------------------------------------------------------------------------------
 //  @brief      接收初始化
@@ -321,9 +326,9 @@ void NANO_Data_Unpack(uint8_t nano_data[16])     //NANO接收解包
 			if (nano_data[3]!=0x77)    //校验帧尾
 		    return;
 			if (nano_data[2]==1)
-				Cam_Light_ON();
+				{}//Cam_Light_ON();  // 已删除
 			else if (nano_data[2]==2)
-        Cam_Light_OFF();
+        {}//Cam_Light_OFF();  // 已删除
 			else if (nano_data[2]==3)
         LED_2_ON();
 			break;

@@ -13,6 +13,12 @@
 #include "Tower_task.h"
 #include "Chassis_task.h"
 #include "cmsis_os2.h"
+#include "tower.h"
+#include "visual_identity.h"   /* VIS_RX, vsiual_data_inti, identify_*, visual_idle */
+#include "chassis_control.h"   /* delay_visual, delay_pos */   /* 提供 Motor28_AbsPosition / Motor35_AbsPosition / Tower_init 等声明 */
+
+/* 蜂鸣器：已删除 */
+#define buzzer_rings(on, off, n)     ((void)0)
 
 #define h_comp 0 
 #define t_comp 0 
@@ -116,21 +122,11 @@ void Tower_task(void)    //塔吊任务
 	
 	while(1)
 	{
-		if(control_mode==0)
-		{
-				Motor28_AbsPosition(Motor28_target + d_radius,2000);
-				osDelay(1);
-				Motor35_AbsPosition(Motor35_target,2800);
-				osDelay(1);
-				G6220_Position(MotorDM_target + d_theta,300);	
-	  }
-		else if(control_mode==1)
-		{
-			  Motor28_AbsPosition((RC_RX.KNOB_L+100)*15,1500);
-			  osDelay(5);
-			  Motor35_AbsPosition((RC_RX.KNOB_R+100)*10,3000);
-			  osDelay(5);
-		}
+		Motor28_AbsPosition(Motor28_target + d_radius,2000);
+		osDelay(1);
+		Motor35_AbsPosition(Motor35_target,2800);
+		osDelay(1);
+		G6220_Position(MotorDM_target + d_theta,300);
 		osDelay(10);
 	}
 }

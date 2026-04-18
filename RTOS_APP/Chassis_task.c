@@ -28,7 +28,13 @@
 /* 加速度设置（单位：RPM/s，根据实际调试修改） */
 #define MOTOR_ACC       200
 
-float rcKpx  = 8,  rcKpy = 8,  rcKpz = 6;
+/* ---- 底盘全局变量定义 ---- */
+int   SpeedTarget[4] = {0};     // 速度目标（由 SetMotorVoltageAndDirection 实际写出）
+
+float d_X = 0;                  // X 方向跟踪微调偏移
+float d_Y = 0;                  // Y 方向跟踪微调偏移
+
+uint8_t chassis_mode  = 0;      // 底盘模式
 float mKpx   = 2.3, mKpy = 2.3, mKpz = 9;
 float vKpx   = 1.2, vKpy = 1.2, vKpz = 2.4;
 float cvKpz  = 0.08;
@@ -106,43 +112,6 @@ void numerical_limit(float* value, float max, float min, float dead_zone)
         *value = -max;
 }
 
-
-//-------------------------------------------------------------------------------------------------------------------
-//  @brief      底盘遥控函数
-//-------------------------------------------------------------------------------------------------------------------
-void chassis_RC(short x, short y, short z)
-{
-    XYVmax = 800;
-    ZVmax  = 600;
-
-    int   Speed[4] = {0};
-    devx = x;
-    devy = y;
-    devz = z;
-
-    float vx1 = 0, vy1 = 0, vz = 0;
-
-    vx1 = 1 * rcKpx * devx;
-    numerical_limit(&vx1, XYVmax, 0, 5);
-
-    vy1 = 1 * rcKpy * devy;
-    numerical_limit(&vy1, XYVmax, 0, 5);
-
-    vz = rcKpz * devz;
-    numerical_limit(&vz, ZVmax, 0, 5);
-
-    float v_ratio = 1;
-
-    Speed[0] =   (int)(( vy1 + vx1 ) * v_ratio + vz);
-    Speed[1] = - (int)(( vy1 - vx1 ) * v_ratio - vz);
-    Speed[2] =   (int)(( vy1 - vx1 ) * v_ratio + vz);
-    Speed[3] = - (int)(( vy1 + vx1 ) * v_ratio - vz);
-
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        SpeedTarget[i] = (int)(Speed[i] * 0.238f);
-    }
-}
 
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -305,4 +274,82 @@ void visual_pos_adj(uint8_t target, int x, int y, int z)
 
     if (delay_visual > 200)
         v_in_pos = 1;
+}
+
+
+//=============================================================
+//  底盘 RTOS 任务函数实现
+//=============================================================
+
+void Motor_Init(void)
+{
+    /* ZDT 步进电机通过 CAN1 控制，CAN 由 MX_CAN1_Init 已初始化 */
+    /* 上电使能四轮电机 */
+    X_V2_En_Control(MOTOR_ADDR_LF, true, false);
+    X_V2_En_Control(MOTOR_ADDR_RF, true, false);
+    X_V2_En_Control(MOTOR_ADDR_LB, true, false);
+    X_V2_En_Control(MOTOR_ADDR_RB, true, false);
+}
+
+void Chassis_target_updata(int x, int y, int z)
+{
+    /* 更新底盘目标位置（由 Main_task/Tower_task 调用） */
+    chassis_move(x, y, z);
+}
+
+void Chassis_d_zero(void)
+{
+    d_X = 0;
+    d_Y = 0;
+    delay_visual = 0;
+}
+
+void Chassis_Go_Pos(int x, int y, int z, uint8_t precise, uint16_t timeout_ms)
+{
+    in_pos = 0;
+    near_pos = 0;
+    delay_pos = 0;
+    uint16_t elapsed = 0;
+    while (!in_pos)
+    {
+        chassis_move(x + (int)d_X, y + (int)d_Y, z);
+        SetMotorVoltageAndDirection(SpeedTarget[0], SpeedTarget[1],
+                                   SpeedTarget[2], SpeedTarget[3]);
+        osDelay(10);
+        elapsed += 10;
+        if (timeout_ms > 0 && elapsed >= timeout_ms)
+            break;
+    }
+    SpeedTarget_stop();
+    SetMotorVoltageAndDirection(0, 0, 0, 0);
+}
+
+void Chassis_Visual_Pos(uint8_t target, int x, int y, int z, uint16_t timeout_ms)
+{
+    v_in_pos = 0;
+    delay_visual = 0;
+    uint16_t elapsed = 0;
+    while (!v_in_pos)
+    {
+        visual_pos_adj(target, x, y, z);
+        SetMotorVoltageAndDirection(SpeedTarget[0], SpeedTarget[1],
+                                   SpeedTarget[2], SpeedTarget[3]);
+        osDelay(10);
+        elapsed += 10;
+        if (timeout_ms > 0 && elapsed >= timeout_ms)
+            break;
+    }
+    SpeedTarget_stop();
+    SetMotorVoltageAndDirection(0, 0, 0, 0);
+}
+
+void Chassis_task(void)
+{
+    Motor_Init();
+    while (1)
+    {
+        SetMotorVoltageAndDirection(SpeedTarget[0], SpeedTarget[1],
+                                   SpeedTarget[2], SpeedTarget[3]);
+        osDelay(5);
+    }
 }

@@ -12,7 +12,6 @@
 
 #include "chassis_control.h"
 
-float rcKpx	= 8, rcKpy = 8, rcKpz = 6;       //move函数Kp
 float mKpx	= 2.3, mKpy = 2.3, mKpz = 9;     //move函数Kp
 float vKpx	= 1.2, vKpy =1.2, vKpz = 2.4;    //调整函数Kp
 float cvKpz	= 0.08;    //z轴调整函数Kp
@@ -100,51 +99,6 @@ void numerical_limit(float* value, float max, float min , float dead_zone)
 	  *value = -max;
 }
 
-//-------------------------------------------------------------------------------------------------------------------
-//  @brief      		 底盘遥控函数
-//  @return     		 /
-//  @param					 short x  X轴速度
-//  @param					 short y  Y轴速度
-//  @param					 short z  Z轴速度
-//  @Sample usage:   略
-//-------------------------------------------------------------------------------------------------------------------
-void chassis_RC(short x,short y,short z)      //底盘遥控函数
-{
-  XYVmax=800;
-	ZVmax=600;
-	
-//	  float length = sqrt( x * x + y * y );      //归一化处理
-//       x = ( x / length ) * 100;
-//       y = ( y / length ) * 100;
-
-		int Speed[4]={0};
-		devx = x;
-		devy = y;
-		devz = z;
-		
-		float vx1 = 0,vy1 = 0,vz = 0;
-
-		vx1 =1 * rcKpx * devx;
-		numerical_limit(&vx1, XYVmax, 0, 5);
-			
-		vy1 =1 * rcKpy * devy;
-		numerical_limit(&vy1, XYVmax, 0, 5);
-
-		vz = rcKpz * devz;
-		numerical_limit(&vz, ZVmax, 0, 5);
-
-		float v_ratio = 1;
-			
-    Speed[0] =   ( ( vy1 + vx1 ) * v_ratio + vz);
-  	Speed[1] = - ( ( vy1 - vx1 ) * v_ratio - vz);
-  	Speed[2] =   ( ( vy1 - vx1 ) * v_ratio + vz);
-  	Speed[3] = - ( ( vy1 + vx1 ) * v_ratio - vz);
-
-    for(uint8_t i=0;i<4;i++)       //速度提交
-	  {
-			SpeedTarget[i]=(int)(Speed[i] * 0.238);
-	  }
-}
 
 //-------------------------------------------------------------------------------------------------------------------
 //  @brief      		 底盘定位系统位置环

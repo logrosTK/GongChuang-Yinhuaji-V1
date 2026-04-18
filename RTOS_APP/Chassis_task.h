@@ -22,7 +22,6 @@ extern uint8_t near_pos;    //接近指示
 extern float d_X,
 	           d_Y;
 extern uint8_t chassis_mode;    //底盘模式
-extern uint8_t control_mode;    //遥控模式
 
 void Motor_Init(void);    //底盘初始化
 void Chassis_target_updata(int x, int y, int z);    //底盘目标位置更新

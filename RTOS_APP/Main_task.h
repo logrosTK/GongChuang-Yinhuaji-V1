@@ -1,14 +1,13 @@
 #ifndef __MAIN_TASK_H__
 #define __MAIN_TASK_H__
 
-#define 	__PRELIMINARY_ROUND__       //Ê¹ÓÃ³õÈü´úÂë
+#define 	__PRELIMINARY_ROUND__       //Ê¹ï¿½Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 #include "main.h"
 #include "Output_task.h"
 #include "Chassis_task.h"
 #include "Tower_task.h"
 
-extern struct RC_DATA RC_RX;
 extern uint8_t GET_TASK_FLAGE;
 
 extern void Main_task(void);

@@ -1,6 +1,14 @@
 #include "position.h"
 #include "cmsis_os2.h"
 
+/* 全局定位变量定义 */
+float pos_x   = 0;   // X 坐标 (mm)
+float pos_y   = 0;   // Y 坐标 (mm)
+float zangle  = 0;   // 偏航角 (°)
+float xangle  = 0;   // 俯仰角 (°)
+float yangle  = 0;   // 横滚角 (°)
+float w_z     = 0;   // Z 轴角速度
+
 /**
  * @brief 数据解析函数  如更换MCU平台或更换软件库，只需将串口接收到的值传入该函数即可解析
  * @param  rec 串口接收到的字节数据
